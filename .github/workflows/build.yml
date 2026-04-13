@@ -130,7 +130,12 @@ jobs:
 
   publish:
     name: Publish Release
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Normal path: publish on v* tag push.
+    # Preview path: also publish when the claude/dns-per-domain-config-D72P1
+    # branch is pushed, so testers can install the artifact from a GitHub
+    # Release without waiting for a version bump. Revert this branch clause
+    # before merging to the default branch.
+    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/claude/dns-per-domain-config-D72P1'
     runs-on: ubuntu-latest
     needs: build_plugin
     steps:
@@ -142,8 +147,17 @@ jobs:
           path: /tmp/artifacts
 
       - run: ls -R /tmp/artifacts
-      - run: |
-          mv /tmp/artifacts/tomoon-artifacts/tomoon.zip /tmp/artifacts/tomoon-artifacts/tomoon-$GITHUB_REF_NAME.zip
+
+      - name: compute release name
+        id: relname
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            NAME="${GITHUB_REF_NAME}"
+          else
+            NAME="v0.2.9-dns-policy-preview"
+          fi
+          echo "name=${NAME}" >> "$GITHUB_OUTPUT"
+          mv /tmp/artifacts/tomoon-artifacts/tomoon.zip "/tmp/artifacts/tomoon-artifacts/tomoon-${NAME}.zip"
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
 
@@ -151,9 +165,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: /tmp/artifacts/tomoon-artifacts/tomoon*.zip
-          name: Release ${{ github.ref_name }}
+          name: Release ${{ steps.relname.outputs.name }}
+          tag_name: ${{ steps.relname.outputs.name }}
+          target_commitish: ${{ github.sha }}
           draft: false
           generate_release_notes: true
-          prerelease: contains(github.ref, 'pre')
+          prerelease: ${{ contains(steps.relname.outputs.name, 'pre') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
