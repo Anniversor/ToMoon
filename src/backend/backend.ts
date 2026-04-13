@@ -1,7 +1,7 @@
 import { call } from "@decky/api";
 import { init_usdpl, init_embedded, call_backend } from "usdpl-front";
 import axios from "axios";
-import { EnhancedMode } from ".";
+import { EnhancedMode, DnsPolicyRule } from ".";
 
 const USDPL_PORT: number = 55555;
 
@@ -280,5 +280,15 @@ export class ApiCallBackend {
   // set_dashboard
   public static async setDashboard(value: String) {
     return await apiCallMethod("set_dashboard", { dashboard: value });
+  }
+
+  // set_dns_policy
+  // 按域名配置独立的 DNS 服务器 (写入 clash nameserver-policy)。
+  // 后端以 JSON 字符串解析 dns_policy 字段，因为现有 handler 都使用
+  // application/x-www-form-urlencoded，无法直接承载数组。
+  public static async setDnsPolicy(rules: DnsPolicyRule[]) {
+    return await apiCallMethod("set_dns_policy", {
+      dns_policy: JSON.stringify(rules),
+    });
   }
 }

@@ -31,5 +31,16 @@
     "REINSTALL_PLUGIN": "Reinstall Plugin",
     "UPDATE_TO": "Update to",
     "INSTALLED_VERSION": "Installed Version",
-    "LATEST_VERSION": "Latest Version"
+    "LATEST_VERSION": "Latest Version",
+    "MANAGE_DNS_POLICY": "Per-Domain DNS Rules",
+    "DNS_POLICY_TITLE": "Per-Domain DNS Rules",
+    "DNS_POLICY_DESC": "Resolve specific domains through specific DNS servers (clash nameserver-policy). Supports plain domain, +.wildcard, geosite:xxx and comma-separated domains. Server field accepts a single server or comma-separated list.",
+    "DNS_POLICY_DOMAIN": "Domain",
+    "DNS_POLICY_NAMESERVER": "DNS Server",
+    "DNS_POLICY_ADD": "Add Rule",
+    "DNS_POLICY_DELETE": "Delete",
+    "DNS_POLICY_SAVE": "Save",
+    "DNS_POLICY_SAVED": "Saved",
+    "DNS_POLICY_SAVE_FAILED": "Save failed",
+    "DNS_POLICY_EMPTY_HINT": "No rules yet. Click \"Add Rule\" to create one."
 }

@@ -31,5 +31,16 @@
     "REINSTALL_PLUGIN": "重新安装插件",
     "UPDATE_TO": "更新到",
     "INSTALLED_VERSION": "已安装版本",
-    "LATEST_VERSION": "最新版本"
+    "LATEST_VERSION": "最新版本",
+    "MANAGE_DNS_POLICY": "分域名 DNS 规则",
+    "DNS_POLICY_TITLE": "分域名 DNS 规则",
+    "DNS_POLICY_DESC": "为特定域名指定 DNS 服务器解析 (clash nameserver-policy)。支持普通域名、+.通配、geosite:xxx，以及用英文逗号分隔多个域名。服务器字段可填单个 DNS，或用英文逗号分隔多个 DNS。",
+    "DNS_POLICY_DOMAIN": "域名",
+    "DNS_POLICY_NAMESERVER": "DNS 服务器",
+    "DNS_POLICY_ADD": "添加规则",
+    "DNS_POLICY_DELETE": "删除",
+    "DNS_POLICY_SAVE": "保存",
+    "DNS_POLICY_SAVED": "已保存",
+    "DNS_POLICY_SAVE_FAILED": "保存失败",
+    "DNS_POLICY_EMPTY_HINT": "暂无规则，点击\"添加规则\"新增一条。"
 }

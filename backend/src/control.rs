@@ -259,6 +259,7 @@ impl Clash {
         allow_remote_access: bool,
         enhanced_mode: EnhancedMode,
         dashboard: String,
+        dns_policy: &[crate::settings::DnsPolicyRule],
     ) -> Result<(), ClashError> {
         // decky 插件数据目录
         let decky_data_dir = get_decky_data_dir().unwrap();
@@ -329,6 +330,7 @@ impl Clash {
             allow_remote_access,
             enhanced_mode,
             dashboard,
+            dns_policy,
         ) {
             Ok(_) => (),
             Err(e) => {
@@ -475,6 +477,7 @@ impl Clash {
         allow_remote_access: bool,
         enhanced_mode: EnhancedMode,
         dashboard: String,
+        dns_policy: &[crate::settings::DnsPolicyRule],
     ) -> Result<(), Box<dyn error::Error>> {
         let path = self.config.clone();
         log::info!("change_config path: {:?}", path);
@@ -666,6 +669,41 @@ impl Clash {
             }
             None => {
                 insert_config(yaml, dns_config_fakeip, "dns");
+            }
+        }
+
+        // 合并用户自定义的 nameserver-policy (按域名使用指定 DNS 服务器解析)
+        if !dns_policy.is_empty() {
+            if let Some(Value::Mapping(dns_map)) = yaml.get_mut("dns") {
+                let mut policy = serde_yaml::Mapping::new();
+                for rule in dns_policy {
+                    let domain = rule.domain.trim();
+                    let server = rule.nameserver.trim();
+                    if domain.is_empty() || server.is_empty() {
+                        continue;
+                    }
+                    let value = if server.contains(',') {
+                        Value::Sequence(
+                            server
+                                .split(',')
+                                .map(|v| v.trim())
+                                .filter(|v| !v.is_empty())
+                                .map(|v| Value::String(v.to_string()))
+                                .collect(),
+                        )
+                    } else {
+                        Value::String(server.to_string())
+                    };
+                    policy.insert(Value::String(domain.to_string()), value);
+                }
+                if !policy.is_empty() {
+                    dns_map.remove("nameserver-policy");
+                    dns_map.insert(
+                        Value::String("nameserver-policy".into()),
+                        Value::Mapping(policy),
+                    );
+                    log::info!("Applied {} nameserver-policy rule(s)", dns_policy.len());
+                }
             }
         }
 

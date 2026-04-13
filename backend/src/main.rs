@@ -147,6 +147,11 @@ async fn main() -> Result<(), std::io::Error> {
             .service(
                 web::resource("/set_dashboard").route(web::post().to(external_web::set_dashboard)),
             )
+            // set_dns_policy
+            .service(
+                web::resource("/set_dns_policy")
+                    .route(web::post().to(external_web::set_dns_policy)),
+            )
             // web
             .service(
                 fs::Files::new("/", "./web")

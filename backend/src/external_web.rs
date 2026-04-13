@@ -12,7 +12,7 @@ use tokio::time::sleep;
 use crate::{
     control::{ClashError, ClashErrorKind, EnhancedMode},
     helper,
-    settings::State,
+    settings::{DnsPolicyRule, State},
 };
 
 pub struct Runtime(pub *const crate::control::ControlRuntime);
@@ -52,6 +52,19 @@ pub struct EnhancedModeParams {
 #[derive(Deserialize)]
 pub struct DashboardParams {
     dashboard: String,
+}
+
+#[derive(Deserialize)]
+pub struct DnsPolicyParams {
+    // JSON-encoded Vec<DnsPolicyRule>. Form-urlencoded cannot carry nested arrays,
+    // so the frontend sends the list as a JSON string in a single form field.
+    pub dns_policy: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct DnsPolicyResponse {
+    status_code: u16,
+    message: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -103,6 +116,7 @@ pub struct GetConfigResponse {
     allow_remote_access: bool,
     dashboard: String,
     secret: String,
+    dns_policy: Vec<DnsPolicyRule>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -357,6 +371,70 @@ pub async fn set_dashboard(
     Ok(HttpResponse::Ok().json(r))
 }
 
+// set_dns_policy: 按域名配置独立的 DNS 服务器 (clash nameserver-policy)
+pub async fn set_dns_policy(
+    state: web::Data<AppState>,
+    params: web::Form<DnsPolicyParams>,
+) -> Result<HttpResponse> {
+    let parsed: Vec<DnsPolicyRule> = match serde_json::from_str(&params.dns_policy) {
+        Ok(v) => v,
+        Err(e) => {
+            log::error!("Failed to parse dns_policy JSON: {}", e);
+            return Err(actix_web::Error::from(ClashError {
+                Message: format!("invalid dns_policy payload: {}", e),
+                ErrorKind: ClashErrorKind::ConfigFormatError,
+            }));
+        }
+    };
+    // 去掉空白和空条目
+    let cleaned: Vec<DnsPolicyRule> = parsed
+        .into_iter()
+        .map(|r| DnsPolicyRule {
+            domain: r.domain.trim().to_string(),
+            nameserver: r.nameserver.trim().to_string(),
+        })
+        .filter(|r| !r.domain.is_empty() && !r.nameserver.is_empty())
+        .collect();
+
+    let runtime = state.runtime.lock().unwrap();
+    let runtime_settings;
+    let runtime_state;
+    unsafe {
+        let runtime = runtime.0.as_ref().unwrap();
+        runtime_settings = runtime.settings_clone();
+        runtime_state = runtime.state_clone();
+    }
+    match runtime_settings.write() {
+        Ok(mut x) => {
+            x.dns_policy = cleaned;
+            let mut state = match runtime_state.write() {
+                Ok(x) => x,
+                Err(e) => {
+                    log::error!("set_dns_policy failed to acquire state write lock: {}", e);
+                    return Err(actix_web::Error::from(ClashError {
+                        Message: e.to_string(),
+                        ErrorKind: ClashErrorKind::InnerError,
+                    }));
+                }
+            };
+            state.dirty = true;
+        }
+        Err(e) => {
+            log::error!("Failed while set dns policy.");
+            log::error!("Error Message:{}", e);
+            return Err(actix_web::Error::from(ClashError {
+                Message: e.to_string(),
+                ErrorKind: ClashErrorKind::ConfigNotFound,
+            }));
+        }
+    }
+    let r = DnsPolicyResponse {
+        message: "修改成功".to_string(),
+        status_code: 200,
+    };
+    Ok(HttpResponse::Ok().json(r))
+}
+
 pub async fn restart_clash(state: web::Data<AppState>) -> Result<HttpResponse> {
     let runtime = state.runtime.lock().unwrap();
     // let runtime_settings;
@@ -467,6 +545,7 @@ pub async fn reload_clash_config(state: web::Data<AppState>) -> Result<HttpRespo
         settings.allow_remote_access,
         settings.enhanced_mode,
         settings.dashboard.clone(),
+        &settings.dns_policy,
     ) {
         Ok(_) => {}
         Err(e) => {
@@ -533,6 +612,7 @@ pub async fn get_config(state: web::Data<AppState>) -> Result<HttpResponse> {
                 enhanced_mode: x.enhanced_mode,
                 dashboard: x.dashboard.clone(),
                 secret: secret,
+                dns_policy: x.dns_policy.clone(),
                 status_code: 200,
             };
             return Ok(HttpResponse::Ok().json(r));

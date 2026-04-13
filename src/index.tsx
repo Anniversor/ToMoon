@@ -17,7 +17,7 @@ import { routerHook } from "@decky/api";
 import { FC, useEffect, useState } from "react";
 import { GiEgyptianBird } from "react-icons/gi";
 
-import { Subscriptions, About, Debug } from "./pages";
+import { Subscriptions, About, Debug, DnsPolicy } from "./pages";
 
 import * as backend from "./backend/backend";
 
@@ -384,6 +384,17 @@ const Content: FC<{}> = ({}) => {
           </PanelSectionRow>
         )}
         <PanelSectionRow>
+          <ButtonItem
+            layout="below"
+            onClick={() => {
+              Router.CloseSideMenus();
+              Router.Navigate("/tomoon-config/dns-policy");
+            }}
+          >
+            {localizationManager.getString(L.MANAGE_DNS_POLICY)}
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
           <ActionButtonItem
             disabled={!clashState}
             layout="below"
@@ -426,6 +437,11 @@ const DeckyPluginRouterTest: FC = () => {
           title: localizationManager.getString(L.SUBSCRIPTIONS),
           content: <Subscriptions Subscriptions={subs} />,
           route: "/tomoon-config/subscriptions",
+        },
+        {
+          title: localizationManager.getString(L.DNS_POLICY_TITLE),
+          content: <DnsPolicy />,
+          route: "/tomoon-config/dns-policy",
         },
         {
           title: localizationManager.getString(L.ABOUT),

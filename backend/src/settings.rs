@@ -25,6 +25,14 @@ pub struct Settings {
     pub dashboard: String,
     #[serde(default = "default_secret")]
     pub secret: String,
+    #[serde(default = "default_dns_policy")]
+    pub dns_policy: Vec<DnsPolicyRule>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DnsPolicyRule {
+    pub domain: String,
+    pub nameserver: String,
 }
 
 fn default_skip_proxy() -> bool {
@@ -63,6 +71,10 @@ fn default_current_sub() -> String {
 }
 
 fn default_subscriptions() -> Vec<Subscription> {
+    Vec::new()
+}
+
+fn default_dns_policy() -> Vec<DnsPolicyRule> {
     Vec::new()
 }
 
@@ -158,6 +170,7 @@ impl Default for Settings {
             allow_remote_access: default_allow_remote_access(),
             dashboard: default_dashboard(),
             secret: default_secret(),
+            dns_policy: default_dns_policy(),
         }
     }
 }
