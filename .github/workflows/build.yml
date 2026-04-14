@@ -26,13 +26,22 @@ jobs:
         run: |
           mkdir tmp && cd tmp
           mkdir core && cd core
-          # Mihomo (Clash Meta) — pin to the canonical baseline asset
-          # (mihomo-linux-amd64-vX.Y.Z.gz). Upstream now ships many GOAMD64
-          # micro-arch and toolchain variants whose names also start with
-          # "linux-amd64-v...", so tighten the regex to avoid matching them.
-          LATEST_URL=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest \
-            | grep -Eo "https://[^\"']+/mihomo-linux-amd64-v[0-9]+\.[0-9]+\.[0-9]+\.gz" \
-            | head -n1)
+          # Mihomo (Clash Meta) — derive the latest tag from the
+          # /releases/latest redirect (no api.github.com call, so the
+          # runner's shared IP can't get rate-limited), then download
+          # the canonical baseline asset mihomo-linux-amd64-vX.Y.Z.gz.
+          # Upstream now also ships v1/v2/v3 GOAMD64 micro-arch and
+          # go120/go123 toolchain variants whose names start the same
+          # way, so we must match on the exact -vX.Y.Z.gz suffix.
+          LATEST_TAG=$(curl -sI https://github.com/MetaCubeX/mihomo/releases/latest \
+            | awk 'tolower($1)=="location:"{print $2}' \
+            | sed -E 's|.*/tag/(v[0-9.]+).*|\1|' \
+            | tr -d '\r\n')
+          if [ -z "$LATEST_TAG" ]; then
+            echo "Failed to resolve mihomo latest tag" >&2
+            exit 1
+          fi
+          LATEST_URL="https://github.com/MetaCubeX/mihomo/releases/download/${LATEST_TAG}/mihomo-linux-amd64-${LATEST_TAG}.gz"
           echo "Downloading mihomo from: $LATEST_URL"
           wget -O clash.gz "$LATEST_URL"
           gzip -d clash.gz
