@@ -69,7 +69,10 @@ jobs:
           rm -f *.zip
 
           cd $GITHUB_WORKSPACE
-          wget -O subconverter_linux64.tar.gz https://github.com/MetaCubeX/subconverter/releases/download/Alpha/subconverter_linux64.tar.gz
+          # Upstream removed the rolling "Alpha" tag; use the
+          # /releases/latest/download/ redirect so this always pulls
+          # whatever the current stable subconverter release is.
+          wget -O subconverter_linux64.tar.gz https://github.com/MetaCubeX/subconverter/releases/latest/download/subconverter_linux64.tar.gz
           tar xvf subconverter_linux64.tar.gz
 
           # upx
