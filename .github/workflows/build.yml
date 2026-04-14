@@ -95,13 +95,18 @@ jobs:
       - name: Install Requestment
         run: |
           cp -r usdpl src/
-          npm i
+          # @types/react is pinned to 19.0.8 but @types/react-dom@^19.0.3
+          # now resolves to 19.2.x, which has a peer requirement on
+          # @types/react@^19.2.0. Use legacy peer-dep resolution so npm
+          # accepts the slightly-out-of-range types without us having to
+          # bump the maintainer's pinned versions.
+          npm i --legacy-peer-deps
       - name: build front end
         run: npm run build
         working-directory: .
       - name: build external web page
         run: |
-          npm i
+          npm i --legacy-peer-deps
           npm run build
         working-directory: tomoon-web
       # build front-end end
