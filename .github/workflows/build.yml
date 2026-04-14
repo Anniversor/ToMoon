@@ -26,9 +26,15 @@ jobs:
         run: |
           mkdir tmp && cd tmp
           mkdir core && cd core
-          # Mihomo (Clash Meta)
-          LATEST_URL=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | grep "browser_download_url.*linux-amd64-v.*gz\"" | cut -d '"' -f 4)
-          wget -O clash.gz $LATEST_URL
+          # Mihomo (Clash Meta) — pin to the canonical baseline asset
+          # (mihomo-linux-amd64-vX.Y.Z.gz). Upstream now ships many GOAMD64
+          # micro-arch and toolchain variants whose names also start with
+          # "linux-amd64-v...", so tighten the regex to avoid matching them.
+          LATEST_URL=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest \
+            | grep -Eo "https://[^\"']+/mihomo-linux-amd64-v[0-9]+\.[0-9]+\.[0-9]+\.gz" \
+            | head -n1)
+          echo "Downloading mihomo from: $LATEST_URL"
+          wget -O clash.gz "$LATEST_URL"
           gzip -d clash.gz
 
           # upx
