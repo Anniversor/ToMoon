@@ -349,7 +349,17 @@ impl Clash {
 
         log::info!("Starting Clash...");
 
+        // mihomo v1.19+ enforces a "safe path" check that rejects any
+        // file path in the config that isn't under the -d home dir.
+        // ToMoon's external-ui lives at <plugin_dir>/bin/core/web while
+        // -d is set to <plugin_dir>/../../data/tomoon, so we must whitelist
+        // the plugin dir via the SAFE_PATHS env var or mihomo exits with
+        // "path is not subpath of home directory or SAFE_PATHS".
+        let plugin_dir = get_current_working_dir()
+            .unwrap_or_else(|_| std::path::PathBuf::from("/home/deck/homebrew/plugins/tomoon"));
+
         let clash = Command::new(self.path.clone())
+            .env("SAFE_PATHS", &plugin_dir)
             .arg("-d")
             .arg(decky_data_dir)
             .arg("-f")
